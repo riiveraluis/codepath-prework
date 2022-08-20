@@ -39,7 +39,7 @@ class ViewController: UIViewController {
     }
     
     var formatter: NumberFormatter {
-        var formatter = NumberFormatter()
+        let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.maximumFractionDigits = 2
         formatter.locale = Locale(identifier: currency.code)
