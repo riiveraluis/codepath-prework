@@ -22,7 +22,7 @@ class ViewController: UIViewController {
     @IBOutlet weak var perPersonLabel: UILabel!
     
     // Values come from UserDefaults
-    var currency = Currency(code: "USD", name: "US Dollar", symbol: "$") {
+    var currency = Currency(code: "en_US", name: "US Dollar", symbol: "$") {
         didSet {
             if let encodedCurrency = try? JSONEncoder().encode(currency) {
                 UserDefaults.standard.set(encodedCurrency, forKey: "currency")
@@ -36,6 +36,14 @@ class ViewController: UIViewController {
                 UserDefaults.standard.set(encodedPercentages, forKey: "tipPercentages")
             }
         }
+    }
+    
+    var formatter: NumberFormatter {
+        var formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.maximumFractionDigits = 2
+        formatter.locale = Locale(identifier: currency.code)
+        return formatter
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -55,9 +63,13 @@ class ViewController: UIViewController {
                 currency = decodedCurrency
             }
         } else {
-            let deviceCurrencyCode = Locale.current.currency?.identifier ?? "USD"
-            let deviceCurrencyName = Locale.current.localizedString(forCurrencyCode: deviceCurrencyCode)!
-            let deviceSymbol = Locale.current.currencySymbol ?? "$"
+            let deviceCurrencyCode = Locale.current.identifier
+            
+            guard let deviceCurrencyName = Locale.autoupdatingCurrent.localizedString(forCurrencyCode: deviceCurrencyCode),
+                  let deviceSymbol = Locale.current.currencySymbol else {
+                currency = Currency(code: "en_US", name: "US Dollar", symbol: "$")
+                return
+            }
             
             currency = Currency(code: deviceCurrencyCode, name: deviceCurrencyName, symbol: deviceSymbol)
         }
@@ -71,6 +83,7 @@ class ViewController: UIViewController {
         
         // Reset UI
         billAmountTextField.text = ""
+        billAmountTextField.placeholder = "\(currency.symbol)0.0"
         tipControl.selectedSegmentIndex = 0
         peopleStepper.value = 1.0
         updateUI(tip: 0.0, total: 0.0, perPerson: 0.0)
@@ -100,10 +113,10 @@ class ViewController: UIViewController {
     
     func updateUI(tip: Double, total: Double, perPerson: Double) {
         // Updating the labels with the calculated values and currency symbols
-        tipAmountLabel.text = String(format: currency.symbol + "%.2f", tip)
-        totalLabel.text = String(format: currency.symbol + "%.2f", total)
+        tipAmountLabel.text = formatter.string(from: NSNumber(value: tip))
+        totalLabel.text = formatter.string(from: NSNumber(value: total))
         peopleLabel.text = "\(Int(peopleStepper.value)) people"
-        perPersonLabel.text = String(format: currency.symbol + "%.2f", perPerson)
+        perPersonLabel.text = formatter.string(from: NSNumber(value: perPerson))
     }
     
     @IBAction func textFieldValueChanged(_ sender: UITextField) {

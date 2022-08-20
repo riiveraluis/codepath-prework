@@ -38,6 +38,13 @@ class SettingsViewController: UIViewController, UIPickerViewDataSource, UIPicker
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
+        currencies = Locale.availableIdentifiers.compactMap {
+            guard let currencyCode = Locale(identifier: $0).currencyCode,
+                  let name = Locale.autoupdatingCurrent.localizedString(forCurrencyCode: currencyCode),
+                  let symbol = Locale(identifier: $0).currencySymbol  else { return nil }
+            return Currency(code: $0, name: name, symbol: symbol)
+        }
+        
         if let savedPercentages = UserDefaults.standard.data(forKey: "tipPercentages") {
             if let decodedPercentages = try? JSONDecoder().decode([Double].self, from: savedPercentages) {
                 tipPercentages = decodedPercentages
@@ -55,21 +62,13 @@ class SettingsViewController: UIViewController, UIPickerViewDataSource, UIPicker
         if let savedCurrency = UserDefaults.standard.data(forKey: "currency") {
             if let decodedCurrency = try? JSONDecoder().decode(Currency.self, from: savedCurrency) {
                 currency = decodedCurrency
+                print(currency)
+                let indexOfPreviousCurrencySelected = currencies.firstIndex(of: currency) ?? 0
+                       currencyPicker.selectRow(indexOfPreviousCurrencySelected, inComponent: 0, animated: false)
             }
         } else {
             fatalError("Currency not found on user defaults.")
         }
-        
-        currencies = Locale.availableIdentifiers.compactMap {
-            guard let currencyCode = Locale(identifier: $0).currencyCode,
-                  let name = Locale.autoupdatingCurrent.localizedString(forCurrencyCode: currencyCode),
-                  let symbol = Locale(identifier: $0).currencySymbol  else { return nil }
-            return Currency(code: $0, name: name, symbol: symbol)
-        }
-        
-        let indexOfPreviousCurrencySelected = currencies.firstIndex(of: currency)!
-        
-        currencyPicker.selectRow(indexOfPreviousCurrencySelected, inComponent: 0, animated: false)
     }
     
     override func viewDidLoad() {
